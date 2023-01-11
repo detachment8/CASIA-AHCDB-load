@@ -10,7 +10,7 @@ train_data_dir = os.path.join('', 'E:\data\CASIA-AHCDB\style1_basic_test')
 # test_data_dir = os.path.join('', 'E:/github/HWDB/HWDB1.1tst_gnt')
 
 
-def read_from_gnt_dir(gnt_dir=train_data_dir):
+def read_from_gntx_dir(gntx_dir=train_data_dir):
     def one_file(f):
         #头大小为12
         header_size = 12
@@ -30,9 +30,9 @@ def read_from_gnt_dir(gnt_dir=train_data_dir):
             image = np.fromfile(f, dtype='uint8', count=width * height).reshape((height, width))
             yield image, Unicode
 
-    for file_name in os.listdir(gnt_dir):
+    for file_name in os.listdir(gntx_dir):
         if file_name.endswith('.gntx'):
-            file_path = os.path.join(gnt_dir, file_name)
+            file_path = os.path.join(gntx_dir, file_name)
             print("正在加载：{}".format(file_name))
             with open(file_path, 'rb') as f:
                 for image, Unicode in one_file(f):
@@ -40,13 +40,14 @@ def read_from_gnt_dir(gnt_dir=train_data_dir):
 
 
 char_set = set()
-for _, Unicode in read_from_gnt_dir(gnt_dir=train_data_dir):
+for _, Unicode in read_from_gntx_dir(gntx_dir=train_data_dir):
     #转化为16进制再转化为unicode字符
     #Unicode在这里是int型
-    if(Unicode<0x1000 or Unicode>0xffff):
-            continue
-    temp = "\\u"+hex(Unicode)[2:]
-    Unicode_unicode =    temp.encode('utf-8').decode('unicode_escape')
+    # if(Unicode<0x1000 or Unicode>0xffff):
+    #         continue
+    # temp = "\\u"+hex(Unicode)[2:]
+    # Unicode_unicode =    temp.encode('utf-8').decode('unicode_escape')
+    Unicode_unicode = hex(Unicode)[2:]
     char_set.add(Unicode_unicode)
 char_list = list(char_set)
 char_dict = dict(zip(sorted(char_list), range(len(char_list))))
@@ -61,19 +62,22 @@ pickle.dump(char_dict, f)
 f.close()
 train_counter = 0
 test_counter = 0
-for image, Unicode in read_from_gnt_dir(gnt_dir=train_data_dir):
-    tagcode_unicode = Unicode
-    if (Unicode < 0x1000 or Unicode > 0xffff):
-        continue
-    temp = "\\u" + hex(Unicode)[2:]
-    Unicode_unicode = temp.encode('utf-8').decode('unicode_escape')
+for image, Unicode in read_from_gntx_dir(gntx_dir=train_data_dir):
+    # tagcode_unicode = Unicode
+    # if (Unicode < 0x1000 or Unicode > 0xffff):
+    #     continue
+    # temp = "\\u" + hex(Unicode)[2:]
+    # Unicode_unicode = temp.encode('utf-8').decode('unicode_escape')
+    Unicode_unicode = hex(Unicode)[2:]
     im = Image.fromarray(image)
 # 路径为data文件夹下的子文件夹，train为存放训练集.png的文件夹
-    dir_name = 'E:/data/CASIA-AHCDB/test' + '/'+Unicode_unicode
+    dir_name = 'E:/data/CASIA-AHCDB/style1_basic_test_de' + '/'+Unicode_unicode
     #print(dir_name)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
-    im.convert('RGB').save(dir_name + '/' + str(train_counter) + '.png')
-    print("train_counter=", train_counter)
+    im.convert('L').save(dir_name + '/' + str(train_counter) + '.png')
+    if(train_counter % 5000 == 0 ):
+        print("train_counter=", train_counter)
     train_counter += 1
+print("train_counter=", train_counter)
 print('Train transformation finished ...')
